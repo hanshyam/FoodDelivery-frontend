@@ -1,72 +1,98 @@
 import { createContext, useEffect, useState } from "react";
-import axios from 'axios'
+import axios from 'axios';
 
+// ✅ Ensure axios sends cookies (if applicable)
+axios.defaults.withCredentials = true;
 
 export const StoreContext = createContext();
 
 const StoreContextProvider = (props) => {
+  const [token, setToken] = useState("");
   const [cartItems, setCartItems] = useState({});
+  const [food_list, setFoodList] = useState([]);
 
-  const [food_list,setFoodList] = useState([]);
+  // ✅ Use your actual backend API URL
+  const url = "https://ghanshyam-food-delivery.netlify.app/";
 
-  const fetchFoodList = async ()=>{
-     const response = await axios.get(url+"/api/food/list");
-     setFoodList(response.data.data)
-  }
-  
-  const loadCartData = async (token) =>{
-       const response = await axios.post(url +"/api/cart/get",{},{headers:{token}})
-       setCartItems(response.data.cartData);
-  }
-  
+  const fetchFoodList = async () => {
+    try {
+      const response = await axios.get(`${url}/api/food/list`);
+      setFoodList(response.data.data);
+    } catch (err) {
+      console.error("Failed to fetch food list:", err);
+    }
+  };
+
+  const loadCartData = async (token) => {
+    try {
+      const response = await axios.post(`${url}/api/cart/get`, {}, {
+        headers: { token }
+      });
+      setCartItems(response.data.cartData);
+    } catch (err) {
+      console.error("Failed to load cart data:", err);
+    }
+  };
+
   const addToCart = async (itemId) => {
-    if (!cartItems[itemId]) {
-      setCartItems((prev) => ({ ...prev, [itemId]:1}));
-    } else {
-      setCartItems((prev) => ({ ...prev, [itemId]: prev[itemId] + 1 }));
-    }
-    if(token) {
-      await axios.post(url+"/api/cart/add",{itemId},{headers:{token}})
+    setCartItems((prev) => ({
+      ...prev,
+      [itemId]: (prev[itemId] || 0) + 1
+    }));
+
+    if (token) {
+      try {
+        await axios.post(`${url}/api/cart/add`, { itemId }, {
+          headers: { token }
+        });
+      } catch (err) {
+        console.error("Add to cart failed:", err);
+      }
     }
   };
 
-  const removeFromCart =async (itemId) => {
-    setCartItems((prev) => ({...prev,[itemId]: prev[itemId] - 1 }));
-    if(token) {
-      await axios.post(url+"/api/cart/remove",{itemId},{headers:{token}})
+  const removeFromCart = async (itemId) => {
+    setCartItems((prev) => ({
+      ...prev,
+      [itemId]: prev[itemId] - 1
+    }));
+
+    if (token) {
+      try {
+        await axios.post(`${url}/api/cart/remove`, { itemId }, {
+          headers: { token }
+        });
+      } catch (err) {
+        console.error("Remove from cart failed:", err);
+      }
     }
   };
 
-
-  const getTotalCartAmount=()=>{
+  const getTotalCartAmount = () => {
     let totalAmount = 0;
-    for(const item in cartItems)
-      {
-         if(cartItems[item]>0)
-          {
-            let itemInfo = food_list.find(product=>product._id===item);
-            totalAmount += (itemInfo.price)*cartItems[item];
-          }
-          
+    for (const item in cartItems) {
+      if (cartItems[item] > 0) {
+        const itemInfo = food_list.find(product => product._id === item);
+        if (itemInfo) {
+          totalAmount += itemInfo.price * cartItems[item];
+        }
       }
-      return totalAmount;
-  }
+    }
+    return totalAmount;
+  };
 
-   useEffect(()=>{
-     async function loadData(){
-       await fetchFoodList();
-       if(localStorage.getItem("token")){
-         setToken(localStorage.getItem("token"))
-         await loadCartData(localStorage.getItem("token"))
+  useEffect(() => {
+    const loadData = async () => {
+      await fetchFoodList();
+      const savedToken = localStorage.getItem("token");
+      if (savedToken) {
+        setToken(savedToken);
+        await loadCartData(savedToken);
       }
-     }
-     loadData();
-   },[])
-     
-  
+    };
+    loadData();
+  }, []);
 
-  const url = "https://merry-souffle-c8c33e.netlify.app/"
-  const [token,setToken] = useState("")
   const ContextValue = {
     food_list,
     cartItems,
@@ -78,7 +104,6 @@ const StoreContextProvider = (props) => {
     token,
     setToken
   };
-  
 
   return (
     <StoreContext.Provider value={ContextValue}>
@@ -86,4 +111,5 @@ const StoreContextProvider = (props) => {
     </StoreContext.Provider>
   );
 };
+
 export default StoreContextProvider;
