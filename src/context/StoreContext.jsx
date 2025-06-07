@@ -65,7 +65,7 @@ const StoreContextProvider = (props) => {
      
   
 
-  const url = "http://localhost:4000"
+  const url = "https://merry-souffle-c8c33e.netlify.app/"
   const [token,setToken] = useState("")
   const ContextValue = {
     food_list,
