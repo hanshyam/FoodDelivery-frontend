@@ -12,7 +12,7 @@ const StoreContextProvider = (props) => {
   const [food_list, setFoodList] = useState([]);
 
   // ✅ Use your actual backend API URL
-  const url = "https://food-delivery-backend-ucmt.onrender.com/";
+  const url = "https://food-delivery-backend-ucmt.onrender.com";
 
   const fetchFoodList = async () => {
     try {
